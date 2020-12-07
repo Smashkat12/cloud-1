@@ -18,7 +18,29 @@ data "aws_availability_zones" "available" {}
 
 
 # VPC Creation
+resource "aws_vpc" "my_cloud1_vpc" {
+  cidr_block       = "${var.vpc_cidr}"
+  enable_dns_hostname = true
+  enable_dns_support = true
+
+  tags = {
+    Name = "my-cloud1-vpc"
+  }
+}
+
+
+
 # Creating Internet Gateway
+resource "aws_internet_gateway" "gw" {
+  vpc_id = "${aws_vpc.my_cloud1_vpc.id}"
+
+  tags = {
+    Name = "my-cloud1-igw"
+  }
+}
+
+
+
 # Public Route Table
 # Private Route Table
 # Public Subnet
