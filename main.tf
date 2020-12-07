@@ -121,10 +121,55 @@ resource "aws_security_group" "my_cloud1_sg" {
 }
 
 # Ingress Security Port 22
-
+resource "aws_security_group_rule" "ssh_inbound_access" {
+  from_port         = 22
+  protocol          = "tcp"
+  security_group_id = "${aws_security_group.my_cloud1_sg.id}"
+  to_port           = 22
+  type              = "ingress"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
 
 
 
 # Ingress Security Port 80 or 8080
-# Egress Security All OutBound Access
+
+resource "aws_security_group_rule" "http_inbound_access" {
+  from_port         = 80
+  protocol          = "tcp"
+  security_group_id = "${aws_security_group.my_cloud1_sg.id}"
+  to_port           = 80
+  type              = "ingress"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+
+
+# All OutBound Access
+resource "aws_security_group_rule" "all_outbound_access" {
+  from_port         = 0
+  protocol          = "-1"
+  security_group_id = "${aws_security_group.my_cloud1_sg.id}"
+  to_port           = 0
+  type              = "egress"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
+
+
+# Elastic IP for aws nat gateway
+resource "aws_eip" "my_cloud1_eip" {
+  vpc = true
+}
+
+# Nat gateway
+resource "aws_nat_gateway" "my-test-nat-gateway" {
+  allocation_id = "${aws_eip.my_cloud1_eip.id}"
+  subnet_id     = "${aws_subnet.my_cloud1_public_subnet.0.id}"
+}
+
 # Adding Route for Transit Gateway
+resource "aws_route" "my_tgw_route" {
+  route_table_id         = "${aws_route_table.my_public_route_table.id}"
+  destination_cidr_block = "0.0.0.0/0"
+  transit_gateway_id     = "${var.transit_gateway}"
+}
