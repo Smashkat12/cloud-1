@@ -12,7 +12,6 @@ provider "aws" {
   access_key = ""
   secret_key = ""
 }
-
 # Query all avilable Availibility Zone
 data "aws_availability_zones" "available" {}
 
@@ -109,47 +108,78 @@ resource "aws_route_table_association" "private_subnet_assoc" {
   subnet_id      = aws_subnet.my_cloud1_private_subnet.*.id[count.index]
   depends_on     = [aws_default_route_table.my_private_route_table, aws_subnet.my_cloud1_private_subnet]
 }
-# Security Group Creation
-resource "aws_security_group" "my_cloud1_sg" {
-  name   = "my_cloud1_sg"
+# Security Group Creation - ecs
+resource "aws_security_group" "my_cloud1_ecs_sg" {
+  name   = "my_cloud1_ecs_sg"
   vpc_id = aws_vpc.my_cloud1_vpc.id
+
+  # Ingress Security Port 22 SSH
+  ingress {
+    from_port   = 22
+    protocol    = "tcp"
+    to_port     = 22
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Ingress Security Port 80 HTTP
+  ingress {
+    from_port   = 80
+    protocol    = "tcp"
+    to_port     = 80
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Ingress Security Port 443 HTTPS
+  ingress {
+    from_port   = 443
+    protocol    = "tcp"
+    to_port     = 443
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
 }
 
-# Ingress Security Port 22
-resource "aws_security_group_rule" "ssh_inbound_access" {
-  from_port         = 22
-  protocol          = "tcp"
-  security_group_id = aws_security_group.my_cloud1_sg.id
-  to_port           = 22
-  type              = "ingress"
-  cidr_blocks       = ["0.0.0.0/0"]
+# Security Group Creation - rds
+resource "aws_security_group" "my_cloud1_rds_sg" {
+  name   = "my_cloud1_rds_sg"
+  vpc_id = aws_vpc.my_cloud1_vpc.id
+
+  # Ingress Security Port 3306 SQL
+  ingress {
+    from_port       = 3306
+    protocol        = "tcp"
+    to_port         = 3306
+    cidr_blocks     = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.my_cloud1_ecs_sg.id]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
 }
 
-
-
-# Ingress Security Port 80 or 8080
-
-resource "aws_security_group_rule" "http_inbound_access" {
-  from_port         = 80
-  protocol          = "tcp"
-  security_group_id = aws_security_group.my_cloud1_sg.id
-  to_port           = 80
-  type              = "ingress"
-  cidr_blocks       = ["0.0.0.0/0"]
-}
 
 
 
 # All OutBound Access
-resource "aws_security_group_rule" "all_outbound_access" {
+resource "aws_security_group_rule" "all_outbound_access_rds" {
   from_port         = 0
   protocol          = "-1"
-  security_group_id = aws_security_group.my_cloud1_sg.id
-  to_port           = 0
+  security_group_id = aws_security_group.my_cloud1_rds_sg.id
+  to_port           = 65535
   type              = "egress"
   cidr_blocks       = ["0.0.0.0/0"]
 }
-
 
 # Elastic IP for aws nat gateway
 #resource "aws_eip" "my_cloud1_eip" {
