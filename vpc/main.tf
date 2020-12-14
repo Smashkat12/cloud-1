@@ -1,17 +1,5 @@
-terraform {
-  required_providers {
-    aws = {
-      source = "hashicorp/aws"
-    }
-  }
-}
 
-# Configure the AWS Provider
-provider "aws" {
-  region     = "af-south-1"
-  access_key = ""
-  secret_key = ""
-}
+
 # Query all avilable Availibility Zone
 data "aws_availability_zones" "available" {}
 
@@ -139,8 +127,8 @@ resource "aws_security_group" "my_cloud1_ecs_sg" {
 
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
 
   }
@@ -161,25 +149,14 @@ resource "aws_security_group" "my_cloud1_rds_sg" {
   }
   egress {
     from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
 
   }
 }
 
 
-
-
-# All OutBound Access
-resource "aws_security_group_rule" "all_outbound_access_rds" {
-  from_port         = 0
-  protocol          = "-1"
-  security_group_id = aws_security_group.my_cloud1_rds_sg.id
-  to_port           = 65535
-  type              = "egress"
-  cidr_blocks       = ["0.0.0.0/0"]
-}
 
 # Elastic IP for aws nat gateway
 #resource "aws_eip" "my_cloud1_eip" {
